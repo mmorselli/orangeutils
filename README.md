@@ -33,4 +33,4 @@ The .exe files are the compiled version of Python scripts created using PyInstal
   `pip install -r requirements.txt`
   `pip install -r ocnrequirements.txt`
 
-- Run ocnconfig.bat, which will then work from from plain and open Python source
+- Run ocnconfig.bat, which will then work from plain and open Python source
