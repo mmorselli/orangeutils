@@ -27,8 +27,8 @@ To change the configuration without creating a new miner wallet (or to change it
 The .exe files are the compiled version of Python scripts created using PyInstaller. They contain all the necessary dependencies and the source code. It's important to note that the only sensitive data involved is the miner's private key, which is an empty wallet created on the fly, where it's recommended to store only a few ALGO. If one prefers not to use the .exe files, they can simply follow these steps:
 
 - Delete the .exe files
-- Install Python (https://www.python.org/)
-- Execute from terminal (cmd or powershell)
+- Install Python (using install-python.bat or downloading from https://www.python.org/)
+- if you didn't use install-python.bat you also have to execute from terminal (cmd or powershell)
   
   `pip install -r requirements.txt`
   
