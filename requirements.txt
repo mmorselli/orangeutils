@@ -1,3 +1,5 @@
-click==8.1.7
-py-algorand-sdk==2.5.0
-python-dotenv==1.0.0
+python-dotenv
+click
+py-algorand-sdk
+pyinstaller
+qrcode
