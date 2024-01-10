@@ -64,10 +64,10 @@ def parse_juicers(maxround, print_juicers=True, print_winner=True):
                     winner = tx['txn']['apat'][0]
                     oranges = orange_count(winner)
                     formatted_oranges = "{:,.2f}".format(oranges / 100000000)
-        juicers += f"Number of transactions: {count}"
-        juicers += f"Juicers: {len(unique_snd)}"
+        juicers += f"Number of transactions: {count}\n"
+        juicers += f"Juicers: {len(unique_snd)}\n"
         for i, snd in enumerate(unique_snd, start=1):
-            juicers += f"{i}) {snd}"
+            juicers += f"{i}) {snd}\n"
         print(blocknum)
         if print_juicers:
             print(juicers)
@@ -77,9 +77,8 @@ def parse_juicers(maxround, print_juicers=True, print_winner=True):
 
 
 
-# max round to check
-maxround = 50
-print_juicers=False
+maxround = 50 # max round to check
+print_juicers=True
 print_winner=True
 
 parse_juicers(maxround, print_juicers, print_winner)
