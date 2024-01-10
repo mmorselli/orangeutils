@@ -1,9 +1,10 @@
 """
-ORANGES JUICERS ACTIVITY 1.0
+ORANGES JUICERS ACTIVITY 1.01
 """
 
 from algosdk.v2client import algod
 import json
+import time
 
 
 # "testnet" or "mainnet"
@@ -72,6 +73,7 @@ def parse_juicers(maxround, print_juicers=True, print_winner=True):
             print(juicers)
         if print_winner:
             print(f"Winner: {winner} (Balance: {formatted_oranges} ORA)")
+        time.sleep(1)
 
 
 
