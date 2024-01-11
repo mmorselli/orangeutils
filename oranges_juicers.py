@@ -23,11 +23,10 @@ def file_logger(log_file, log):
         f.close()
 
 
-def get_txid(tx):
+def get_appl_txid(tx):
     genesis_id = "mainnet-v1.0"
     genesis_hash = "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8="
     txn_dict = tx['txn']
-    sender=txn_dict['snd']
     sp = SuggestedParams(
         fee=txn_dict['fee'],
         first=txn_dict['fv'],
@@ -36,24 +35,45 @@ def get_txid(tx):
         gen=genesis_id,
         flat_fee=True
     )
-    note=base64.b64decode(txn_dict.get('note', ''))
-    index=txn_dict['apid']
-    app_args=[base64.b64decode(a) for a in txn_dict.get('apaa', [])]
-    accounts=txn_dict.get('apat', [])
-    foreign_assets=txn_dict.get('apas', [])
-    note=base64.b64decode(txn_dict.get('note', ''))
     txn = transaction.ApplicationNoOpTxn(
-        sender=sender,
+        sender=txn_dict['snd'],
         sp=sp,
-        index=index,
-        app_args=app_args,
-        accounts=accounts,
-        foreign_assets=foreign_assets,
-        note=note,
+        index=txn_dict['apid'],
+        app_args=[base64.b64decode(a) for a in txn_dict.get('apaa', [])],
+        accounts=txn_dict.get('apat', []),
+        foreign_assets=txn_dict.get('apas', []),
+        note=base64.b64decode(txn_dict.get('note', '')),
     )
     txid = txn.get_txid()
     return txid
 
+
+def get_axfer_txid(txn_dict):
+    genesis_id = "mainnet-v1.0"
+    genesis_hash = "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8="
+    sender = txn_dict['snd']
+    receiver = txn_dict['arcv']
+    amount = txn_dict['aamt']
+    index = txn_dict['xaid']
+
+    sp = SuggestedParams(
+        fee=0,
+        first=txn_dict['fv'],
+        last=txn_dict['lv'],
+        gh=genesis_hash,
+        gen=genesis_id,
+        flat_fee=False
+    )
+
+    txn = transaction.AssetTransferTxn(
+        sender=sender,
+        sp=sp, 
+        receiver=receiver,
+        amt=amount,
+        index=index
+    )
+
+    return txn.get_txid()
 
 
 def orange_count(address):
@@ -84,17 +104,19 @@ def juicers_in_round(round_num):
     block_info = ALGOD_CLIENT.block_info(round_num)
     for tx in block_info['block']['txns']:
         if 'apid' in tx['txn'] and tx['txn']['apid'] == app_id:
-            if tx['txn']['snd'] != orange_address:
+            if 'dt' in tx and 'itx' in tx['dt'] and 'txn' in tx['dt']['itx'][0] and 'arcv' in tx['dt']['itx'][0]['txn']:
+                winner = tx['dt']['itx'][0]['txn']['arcv']
+                oranges = orange_count(winner)
+                # winnertxid = get_axfer_txid(tx['dt']['itx'][0]['txn'])
+                winnertxid = get_appl_txid(tx)
+                effort = tx['dt']['gd']['last_miner_effort']['ui']
+                file_logger("winners.txt", json.dumps(tx, indent=4)+"\n\n")
+            else:
                 txcount += 1
                 snd = tx['txn']['snd']
                 unique_snd.add(snd)
-                # file_logger("miners.txt", json.dumps(tx, indent=4))
-            else:
-                winner = tx['txn']['apat'][0]
-                oranges = orange_count(winner)
-                winnertxid = get_txid(tx)
-                effort = tx['dt']['ld']['0']['effort']['ui']
-                # file_logger("winners.txt", json.dumps(tx, indent=4))
+                file_logger("miners.txt", json.dumps(tx, indent=4)+"\n\n")
+
 
     return unique_snd, txcount, winner, oranges, winnertxid, effort
 
@@ -136,7 +158,7 @@ def parse_juicers(maxround=50, print_juicers=True, print_winners=True, round=Non
 
 
 
-maxround = 20 # max round to check
+maxround = 20000 # max round to check
 print_juicers=False
 print_winners=True
 round=None # if None, parse from last round
