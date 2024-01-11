@@ -2,40 +2,25 @@
 ORANGES JUICERS ACTIVITY 1.02
 """
 
-from algosdk import encoding
 from algosdk.v2client import algod
 import json
 import time
-import hashlib
 import base64
 from algosdk import transaction
-from algosdk.transaction import ApplicationNoOpTxn, LogicSig, SuggestedParams
-import os
-
+from algosdk.transaction import SuggestedParams
 
 
 # "testnet" or "mainnet"
 NETWORK = "mainnet" 
-
-ALGOD_ADDRESS = f"https://{NETWORK}-api.algonode.cloud"
 TOKEN = ""
+ALGOD_ADDRESS = f"https://{NETWORK}-api.algonode.cloud"
 ALGOD_CLIENT = algod.AlgodClient(TOKEN, ALGOD_ADDRESS)
-
-app_id = 1284326447
-
-# Get the latest application information
-app_info = ALGOD_CLIENT.application_info(app_id)
-
-# Get the address associated with the application
-app_address = app_info['params']['creator']
 
 
 def file_logger(log_file, log):
     with open(log_file, "a") as f:
         f.write(f"{log}\n")
         f.close()
-
-
 
 
 def get_txid(tx):
@@ -89,27 +74,29 @@ def orange_count(address):
 # algod stores only the last 1000 blocks
 def juicers_in_round(round_num):
     txcount = 0
-    juicers = ""
+    app_id = 1284326447
+    orange_address = "ORANGE46RBK7YJRWGGLMMCYJ2NZOJG3WAE2MCRSCK5ZDOJ5RKAZAE5P554"
     winner = None
     winnertxid = None
+    effort = 0
     oranges = 0
     unique_snd = set() # set of unique senders
     block_info = ALGOD_CLIENT.block_info(round_num)
-    # file_logger("blocks.txt", json.dumps(block_info, indent=4))
     for tx in block_info['block']['txns']:
-        # print(json.dumps(tx, indent=4))
         if 'apid' in tx['txn'] and tx['txn']['apid'] == app_id:
-            if tx['txn']['snd'] != 'ORANGE46RBK7YJRWGGLMMCYJ2NZOJG3WAE2MCRSCK5ZDOJ5RKAZAE5P554':
+            if tx['txn']['snd'] != orange_address:
                 txcount += 1
                 snd = tx['txn']['snd']
                 unique_snd.add(snd)
+                # file_logger("miners.txt", json.dumps(tx, indent=4))
             else:
                 winner = tx['txn']['apat'][0]
                 oranges = orange_count(winner)
                 winnertxid = get_txid(tx)
-                # print(json.dumps(tx, indent=4))
+                effort = tx['dt']['ld']['0']['effort']['ui']
+                # file_logger("winners.txt", json.dumps(tx, indent=4))
 
-    return unique_snd, txcount, winner, oranges, winnertxid
+    return unique_snd, txcount, winner, oranges, winnertxid, effort
 
 
 def parse_juicers(maxround=50, print_juicers=True, print_winners=True, round=None, logtofile=False):
@@ -130,7 +117,7 @@ def parse_juicers(maxround=50, print_juicers=True, print_winners=True, round=Non
             continue
         previous_round = last_round
         roundparsed += 1
-        unique_snd, txcount, winner, oranges, winnertxid = juicers_in_round(last_round)
+        unique_snd, txcount, winner, oranges, winnertxid, effort = juicers_in_round(last_round)
         blocknum = f"BLOCK: {last_round} - juicers: {len(unique_snd)} - txcount: {txcount}"
         out +=  blocknum
         if print_juicers:
@@ -140,7 +127,8 @@ def parse_juicers(maxround=50, print_juicers=True, print_winners=True, round=Non
             out += juicers
         if winner and print_winners:
             formatted_oranges = "{:,.2f}".format(oranges / 100000000)
-            out += f"\nWinner: {winner} - Balance: {formatted_oranges} ORA - txid: {winnertxid}\n"
+            formatted_effort = "{:,.2f}".format(effort / 1000000)
+            out += f"\nWinner: {winner} - Effort: {formatted_effort} Balance: {formatted_oranges} ORA - txid: {winnertxid}\n"
         print(out)
         if logtofile:
             file_logger("juicers.txt", out)
